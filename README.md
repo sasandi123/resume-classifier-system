@@ -73,4 +73,4 @@ Download resume dataset from [Kaggle](https://www.kaggle.com/datasets/snehaanbha
 - Job matching recommendations
 
 ## Author
-Your Name - AI & Data Science Student
+Sasandi Abeywickrama
