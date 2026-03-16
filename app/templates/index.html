@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Classifier - Smart Career Categorization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .info-banner {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        .info-banner h3 {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .info-banner ul {
+            margin-left: 20px;
+            color: #555;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            background: #eef0ff;
+            border-color: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 15px;
+            color: #667eea;
+            font-weight: 600;
+            min-height: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .result {
+            margin-top: 40px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .result-header h2 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .main-prediction {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .main-prediction-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-prediction-category {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-prediction-confidence {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .confidence-bar {
+            background: rgba(255, 255, 255, 0.3);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .confidence-fill {
+            background: white;
+            height: 100%;
+            transition: width 0.8s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-predictions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .prediction-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .prediction-item:hover {
+            transform: translateX(5px);
+            border-left-color: #667eea;
+        }
+
+        .prediction-rank {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .prediction-name {
+            flex: 1;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .prediction-confidence {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-row {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .info-icon {
+            font-size: 24px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 80px;
+        }
+
+        .info-value {
+            color: #333;
+            flex: 1;
+        }
+
+        .skills-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .skill-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: default;
+        }
+
+        .skill-tag:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        .no-data {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 AI Resume Classifier</h1>
+            <p class="subtitle">Smart career categorization powered by machine learning</p>
+        </div>
+
+        <div class="info-banner">
+            <h3>🤖 How it works:</h3>
+            <ul>
+                <li>Focuses on <strong>Skills</strong>, <strong>Education</strong>, <strong>Summary</strong>, and <strong>Certifications</strong></li>
+                <li>Classifies into 24 professional categories with confidence scores</li>
+            </ul>
+        </div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📄</div>
+                <p style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">
+                    Click to upload your resume
+                </p>
+                <p style="font-size: 14px; color: #666;">
+                    Supports PDF, DOCX, and TXT files
+                </p>
+                <input type="file" id="fileInput" name="resume" accept=".pdf,.docx,.txt" required>
+                <div class="file-name" id="fileName"></div>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                🚀 Classify Resume
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Analyzing your resume...</p>
+            <p style="color: #999; font-size: 14px; margin-top: 10px;">
+                Extracting skills, education, and key qualifications
+            </p>
+        </div>
+
+        <div class="result" id="result">
+            <div class="result-header">
+                <h2>📊 Classification Results</h2>
+            </div>
+
+            <div class="main-prediction">
+                <div class="main-prediction-label">Predicted Career Category</div>
+                <div class="main-prediction-category" id="category"></div>
+                <div class="main-prediction-confidence">
+                    Confidence: <span id="confidence"></span>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidenceFill"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span>🏆</span>
+                    <span>Top 3 Predictions</span>
+                </div>
+                <div class="top-predictions" id="topPredictions"></div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="wordCount">-</div>
+                    <div class="stat-label">Words</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalSkills">-</div>
+                    <div class="stat-label">Skills Found</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="resumeLength">-</div>
+                    <div class="stat-label">Characters</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span>📞</span>
+                    <span>Contact Information</span>
+                </div>
+                <div class="info-row">
+                    <div class="info-icon">📧</div>
+                    <div class="info-label">Email:</div>
+                    <div class="info-value" id="email">-</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-icon">📱</div>
+                    <div class="info-label">Phone:</div>
+                    <div class="info-value" id="phone">-</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span>💼</span>
+                    <span>Skills Detected</span>
+                </div>
+                <div class="skills-grid" id="skills"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with Machine Learning • Random Forest Classifier • TF-IDF Features</p>
+            <p style="margin-top: 5px; font-size: 12px;">Focuses on relevant sections for accurate classification</p>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const uploadForm = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.textContent = `📎 ${file.name}`;
+            } else {
+                fileName.textContent = '';
+            }
+        });
+
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            // Show loading, hide result
+            result.style.display = 'none';
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Hide loading
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+
+                if (response.ok) {
+                    // Main prediction
+                    document.getElementById('category').textContent = data.category;
+                    document.getElementById('confidence').textContent = data.confidence;
+
+                    // Confidence bar animation
+                    const confidenceValue = parseFloat(data.confidence);
+                    setTimeout(() => {
+                        document.getElementById('confidenceFill').style.width = confidenceValue + '%';
+                    }, 100);
+
+                    // Top 3 predictions
+                    const topPredDiv = document.getElementById('topPredictions');
+                    topPredDiv.innerHTML = '';
+                    data.top_predictions.forEach((pred, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'prediction-item';
+                        div.innerHTML = `
+                            <div style="display: flex; align-items: center;">
+                                <div class="prediction-rank">${index + 1}</div>
+                                <div class="prediction-name">${pred.category}</div>
+                            </div>
+                            <div class="prediction-confidence">${pred.confidence}</div>
+                        `;
+                        topPredDiv.appendChild(div);
+                    });
+
+                    // Stats
+                    document.getElementById('wordCount').textContent =
+                        (data.word_count || 0).toLocaleString();
+                    document.getElementById('totalSkills').textContent =
+                        data.total_skills || 0;
+                    document.getElementById('resumeLength').textContent =
+                        (data.resume_length || 0).toLocaleString();
+
+                    // Contact info
+                    document.getElementById('email').textContent = data.email || 'Not found';
+                    document.getElementById('phone').textContent = data.phone || 'Not found';
+
+                    // Skills
+                    const skillsDiv = document.getElementById('skills');
+                    skillsDiv.innerHTML = '';
+
+                    if (data.skills && data.skills.length > 0) {
+                        data.skills.forEach(skill => {
+                            const tag = document.createElement('div');
+                            tag.className = 'skill-tag';
+                            tag.textContent = skill;
+                            skillsDiv.appendChild(tag);
+                        });
+
+                        if (data.total_skills > data.skills.length) {
+                            const moreTag = document.createElement('div');
+                            moreTag.className = 'skill-tag';
+                            moreTag.style.background = '#999';
+                            moreTag.textContent = `+${data.total_skills - data.skills.length} more`;
+                            skillsDiv.appendChild(moreTag);
+                        }
+                    } else {
+                        skillsDiv.innerHTML = '<div class="no-data">No specific skills detected</div>';
+                    }
+
+                    // Show results with animation
+                    result.style.display = 'block';
+
+                    // Scroll to results
+                    setTimeout(() => {
+                        result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 200);
+
+                } else {
+                    alert(' Error: ' + data.error);
+                }
+
+            } catch (error) {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                alert(' Error processing resume: ' + error);
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
